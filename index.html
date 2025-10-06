@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>برنامج الفواتير</title>
+  <style>
+    body { font-family: "Tahoma", sans-serif; background: #f5f5f5; padding: 20px; }
+    .form-box, .invoice-box {
+      background: #fff; padding: 20px; border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px;
+      direction: rtl;
+    }
+    .form-box input, .form-box textarea {
+      margin: 5px 0; padding: 8px; width: 100%; font-size: 14px;
+    }
+    .btn {
+      background: #d32f2f; color: #fff; border: none;
+      padding: 10px 15px; border-radius: 5px; cursor: pointer;
+    }
+    .btn:hover { background: #b71c1c; }
+    .invoice-box { display: none; width: 800px; margin: auto; background: #fff; padding: 20px; }
+
+    /* الهيدر */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    .header img { height: 80px; }
+    .company-info { flex: 1; text-align: center; }
+
+    h1 { text-align: center; margin: 10px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    table, th, td { border: 1px solid #999; }
+    th, td { padding: 8px; text-align: center; }
+    .no-border { border: none !important; }
+    .bold { font-weight: bold; }
+    .gray { background: #f2f2f2; }
+    .footer { margin-top: 30px; font-size: 13px; }
+
+    @media print {
+      body * { visibility: hidden; }
+      #invoice, #invoice * { visibility: visible; }
+      #invoice { position: absolute; top: 0; right: 0; width: 100%; }
+      #printBtn { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- إدخال البيانات -->
+  <div class="form-box">
+    <h2>إدخال بيانات الفاتورة</h2>
+    <label>اسم العميل:</label>
+    <input type="text" id="clientName" value="">
+
+    <label>رقم الجوال:</label>
+    <input type="text" id="clientPhone" value="">
+
+    <label>رقم الفاتورة:</label>
+    <input type="text" id="invoiceNo" value="" placeholder="اتركها فاضية لتوليد رقم تلقائي">
+
+    <label>تاريخ الفاتورة:</label>
+    <input type="date" id="invoiceDate" value="2025-09-03">
+
+    <label>نوع السيارة / رقم اللوحة:</label>
+    <input type="text" id="carType" value="">
+
+    <label>السعر قبل الضريبة:</label>
+    <input type="number" id="price" value="" step="0.01">
+
+    <label>المبلغ المدفوع من العميل:</label>
+    <input type="number" id="amountPaid" value="" step="0.01" placeholder="اختياري">
+
+    <button class="btn" onclick="generateInvoice()">إنشاء الفاتورة</button>
+  </div>
+
+  <!-- عرض الفاتورة -->
+  <div class="invoice-box" id="invoice">
+    <div class="header">
+      <div class="logo-right">
+        <img src="Add Your Logo.png" alt="شعار يسار" style="width: 250px; height: auto;">
+      </div>
+
+      <div class="company-info">
+        <h2>اسم المؤسسة او الشركة</h2>
+        <p>
+          00000 - التجارية / جدة<br>
+          الرقم الضريبي: 000090000000000<br>
+          سجل تجاري: 0000000000<br>
+          هاتف: 966500000000+<br>
+          ايميل: GmalOrHotmail@gmail.com
+        </p>
+      </div>
+
+      <div class="logo-left">
+        <img src="maxresdefault.jpg" alt="شعار يسار" style="width: 150px; height: auto;">
+      </div>
+    </div>
+
+    <h1>فاتورة ضريبية</h1>
+
+    <table>
+      <tr>
+        <td class="no-border"><b>العميل:</b> <span id="outClient"></span></td>
+        <td class="no-border"><b>رقم الجوال:</b> <span id="outPhone"></span></td>
+      </tr>
+      <tr>
+        <td class="no-border"><b>رقم الفاتورة:</b> <span id="outInvoiceNo"></span></td>
+        <td class="no-border"><b>تاريخ الفاتورة:</b> <span id="outDate"></span></td>
+      </tr>
+    </table>
+
+    <table>
+      <tr class="gray">
+        <th>نوع السيارة / رقم اللوحة</th>
+        <th>السعر</th>
+        <th>نسبة الضريبة</th>
+        <th>قيمة الضريبة</th>
+        <th>الإجمالي مع الضريبة</th>
+      </tr>
+      <tr>
+        <td id="outCar"></td>
+        <td id="outPrice"></td>
+        <td>15%</td>
+        <td id="outVAT"></td>
+        <td id="outTotal"></td>
+      </tr>
+    </table>
+
+    <table>
+      <tr>
+        <td class="no-border bold">الإجمالي قبل الضريبة</td>
+        <td class="no-border" id="outBeforeVAT"></td>
+      </tr>
+      <tr>
+        <td class="no-border bold">القيمة المضافة (15%)</td>
+        <td class="no-border" id="outOnlyVAT"></td>
+      </tr>
+      <tr class="gray">
+        <td class="no-border bold">الإجمالي بعد الضريبة</td>
+        <td class="no-border bold" id="outFinalTotal"></td>
+      </tr>
+      <tr>
+        <td class="no-border bold">مدفوع</td>
+        <td class="no-border" id="outPaid"></td>
+      </tr>
+      <tr>
+        <td class="no-border bold">الرصيد المستحق</td>
+        <td class="no-border" id="outBalance">0.00</td>
+      </tr>
+    </table>
+
+    <div class="footer">
+      <p><b>ملاحظات الفاتورة:</b><br>
+      تم اصدار الفاتورة بناء على طلب العميل دون أدنى مسؤولية<br><br>
+      التحويل على حساب المؤسسة للتجارة:<br>
+      بنك الراجحي<br>
+      رقم الحساب: 000000000000000<br>
+      IBAN: SA0000000000000000000000</p>
+    </div>
+  </div>
+
+  <button class="btn" style="display:none;" id="printBtn" onclick="printInvoice()">🖨️ طباعة / حفظ PDF</button>
+
+  <script>
+    function generateRandomInvoiceNo() {
+      return Math.floor(1000 + Math.random() * 9000).toString(); // رقم من 4 أرقام فقط
+    }
+
+    function toFixed2(n) {
+      n = Number(n);
+      if (isNaN(n)) n = 0;
+      return n.toFixed(2);
+    }
+
+    function printInvoice() {
+      const invNo = (document.getElementById('outInvoiceNo').innerText || 'Invoice').replace(/\s+/g, '_');
+      document.title = `فاتورة-${invNo}`;
+      window.print();
+    }
+
+    function generateInvoice() {
+      let client = document.getElementById("clientName").value;
+      let phone = document.getElementById("clientPhone").value;
+      let invoiceNo = document.getElementById("invoiceNo").value.trim();
+      let invoiceDate = document.getElementById("invoiceDate").value;
+      let car = document.getElementById("carType").value;
+      let price = parseFloat(document.getElementById("price").value);
+      let amountPaidInput = parseFloat(document.getElementById("amountPaid").value);
+
+      if (isNaN(price)) price = 0;
+      if (!invoiceNo) {
+        invoiceNo = generateRandomInvoiceNo();
+        document.getElementById("invoiceNo").value = invoiceNo;
+      }
+
+      let vat = (price * 0.15);
+      let total = price + vat;
+
+      let paidRaw = isNaN(amountPaidInput) ? 0 : amountPaidInput;
+      if (paidRaw < 0) paidRaw = 0;
+      let paid = Math.min(paidRaw, total);
+      let balance = Math.max(total - paidRaw, 0);
+
+      document.getElementById("outClient").innerText = client;
+      document.getElementById("outPhone").innerText = phone;
+      document.getElementById("outInvoiceNo").innerText = invoiceNo;
+      document.getElementById("outDate").innerText = invoiceDate;
+      document.getElementById("outCar").innerText = car;
+      document.getElementById("outPrice").innerText = toFixed2(price);
+      document.getElementById("outVAT").innerText = toFixed2(vat);
+      document.getElementById("outTotal").innerText = toFixed2(total);
+      document.getElementById("outBeforeVAT").innerText = toFixed2(price);
+      document.getElementById("outOnlyVAT").innerText = toFixed2(vat);
+      document.getElementById("outFinalTotal").innerText = toFixed2(total);
+      document.getElementById("outPaid").innerText = toFixed2(paid);
+      document.getElementById("outBalance").innerText = toFixed2(balance);
+
+      document.getElementById("invoice").style.display = "block";
+      document.getElementById("printBtn").style.display = "block";
+    }
+  </script>
+
+</body>
+</html>
